@@ -135,7 +135,7 @@ class Message(object):
         self.msg.add_header(key, value, **params)
 
 
-def sendmail(mailconf, message):
+def sendmail(mailconf, to_addrs, message):
     """Takes a regular dictionary as mailconf, as follows.
 
     Example::
@@ -148,7 +148,7 @@ def sendmail(mailconf, message):
             tls=True,               # optional, default False
         )
 
-        d = mail.sendmail(mailconf, msg)
+        d = mail.sendmail(mailconf, to_addrs, msg)
         d.addCallback(on_response)
     """
     if not isinstance(mailconf, types.DictType):
@@ -179,7 +179,7 @@ def sendmail(mailconf, message):
     p = mailconf.get("password")
     factory = ESMTPSenderFactory(u, p,
                                  message.from_addr,
-                                 message.to_addrs,
+                                 to_addrs,
                                  message.render(),
                                  result,
                                  contextFactory=contextFactory,

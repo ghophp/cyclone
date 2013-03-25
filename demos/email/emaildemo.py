@@ -50,10 +50,12 @@ class Application(cyclone.web.Application):
 class SendmailHandler(cyclone.web.RequestHandler):
     @defer.inlineCallbacks
     def post(self):
+        
         to_addrs = self.get_argument("to_addrs").split(",")
         subject = self.get_argument("subject")
         message = self.get_argument("message")
         content_type = self.get_argument("content_type")
+        bcc_addrs = self.get_argument("bcc_addrs")
 
         # message may also be an html template:
         # message = self.render_string("email.html", name="foobar")
@@ -76,10 +78,19 @@ class SendmailHandler(cyclone.web.RequestHandler):
                    content="this file is fake!")
 
         msg.add_header('X-MailTag', 'sampleUpload')  # custom email header
+        msg.add_header('BCC', bcc_addrs)
 
         try:
+            
+            to = to_addrs
+            if bcc_addrs != "":
+                to = to + bcc_addrs.split(',')
+
             response = yield cyclone.mail.sendmail(
-                                self.settings.email_settings, msg)
+                                self.settings.email_settings, 
+                                to,
+                                msg)
+
             self.render("response.html", title="Success", response=response)
         except Exception, e:
             self.render("response.html", title="Failure", response=str(e))
