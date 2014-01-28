@@ -63,7 +63,7 @@ class SendmailHandler(cyclone.web.RequestHandler):
         # message = self.render_string("email.html", name="foobar")
 
         msg = cyclone.mail.Message(
-            from_addr="you@domain.com",
+            from_addr="ghophp@gmail.com",
             to_addrs=to_addrs,
             subject=subject,
             message=message,

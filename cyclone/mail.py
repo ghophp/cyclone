@@ -57,18 +57,18 @@ class Message(object):
         self.subject = subject
         self.from_addr = from_addr
         self.to_addrs = self.get_list(to_addrs)
+
+        if cc_addrs is not None:
+            self.cc_addrs = self.get_list(cc_addrs)
+            self.to_addrs = self.to_addrs + self.cc_addrs
+
+        if bcc_addrs is not None:
+            self.bcc_addrs = self.get_list(bcc_addrs)
+
         self.msg = None
         self.__cache = None
         self.message = MIMEText(message, _charset=charset)
         self.message.set_type(mime)
-
-        if cc_addrs is not None:
-            self.cc_addrs = self.get_list(cc_addrs)
-            self.add_header('Cc', COMMASPACE.join(self.cc_addrs))
-
-        if bcc_addrs is not None:
-            self.bcc_addrs = self.get_list(bcc_addrs)
-            self.add_header('Bcc', COMMASPACE.join(self.bcc_addrs))
 
     def attach(self, filename, mime=None, charset=None, content=None):
         """Attach files to this message.
@@ -118,8 +118,10 @@ class Message(object):
         self.msg["Subject"] = self.subject
         self.msg["From"] = self.from_addr
         self.msg["To"] = COMMASPACE.join(self.to_addrs)
+        self.msg["Cc"] = COMMASPACE.join(self.cc_addrs)
+        self.msg["Bcc"] = COMMASPACE.join(self.bcc_addrs)
         self.msg["Date"] = formatdate(localtime=True)
-
+        
         if self.__cache is None:
             self.__cache = self.msg.as_string()
 
