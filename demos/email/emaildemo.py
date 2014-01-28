@@ -28,6 +28,7 @@ from twisted.internet import defer, reactor
 
 class Application(cyclone.web.Application):
     def __init__(self):
+
         handlers = [
             (r"/", cyclone.web.RedirectHandler, {"url": "/static/index.html"}),
             (r"/sendmail", SendmailHandler),
@@ -55,7 +56,8 @@ class SendmailHandler(cyclone.web.RequestHandler):
         subject = self.get_argument("subject")
         message = self.get_argument("message")
         content_type = self.get_argument("content_type")
-        bcc_addrs = self.get_argument("bcc_addrs")
+        cc_addrs = self.get_argument("cc_addrs").split(',')
+        bcc_addrs = self.get_argument("bcc_addrs").split(',')
 
         # message may also be an html template:
         # message = self.render_string("email.html", name="foobar")
@@ -66,7 +68,9 @@ class SendmailHandler(cyclone.web.RequestHandler):
             subject=subject,
             message=message,
             mime=content_type,  # optional. default=text/plain
-            charset="utf-8")    # optional. default=utf-8
+            charset="utf-8",    # optional. default=utf-8
+            cc_addrs=cc_addrs,
+            bcc_addrs=bcc_addrs)
 
         img_path = os.path.join(self.settings.static_path, "me.png")
         msg.attach(img_path, mime="image/png")
@@ -78,18 +82,11 @@ class SendmailHandler(cyclone.web.RequestHandler):
                    content="this file is fake!")
 
         msg.add_header('X-MailTag', 'sampleUpload')  # custom email header
-        msg.add_header('BCC', bcc_addrs)
 
         try:
-            
-            to = to_addrs
-            if bcc_addrs != "":
-                to = to + bcc_addrs.split(',')
 
             response = yield cyclone.mail.sendmail(
-                                self.settings.email_settings, 
-                                to,
-                                msg)
+                                self.settings.email_settings, msg)
 
             self.render("response.html", title="Success", response=response)
         except Exception, e:

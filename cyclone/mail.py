@@ -53,19 +53,22 @@ class Message(object):
     """
 
     def __init__(self, from_addr, to_addrs, subject, message,
-                 mime="text/plain", charset="utf-8"):
+                 mime="text/plain", charset="utf-8", cc_addrs=None, bcc_addrs=None):
         self.subject = subject
         self.from_addr = from_addr
-
-        if isinstance(to_addrs, types.StringType):
-            self.to_addrs = [to_addrs]
-        else:
-            self.to_addrs = to_addrs
-
+        self.to_addrs = self.get_list(to_addrs)
         self.msg = None
         self.__cache = None
         self.message = MIMEText(message, _charset=charset)
         self.message.set_type(mime)
+
+        if cc_addrs is not None:
+            self.cc_addrs = self.get_list(cc_addrs)
+            self.add_header('Cc', COMMASPACE.join(self.cc_addrs))
+
+        if bcc_addrs is not None:
+            self.bcc_addrs = self.get_list(bcc_addrs)
+            self.add_header('Bcc', COMMASPACE.join(self.bcc_addrs))
 
     def attach(self, filename, mime=None, charset=None, content=None):
         """Attach files to this message.
@@ -134,8 +137,14 @@ class Message(object):
 
         self.msg.add_header(key, value, **params)
 
+    def get_list(self, content):
+        if isinstance(content, types.StringType):
+            return [content]
+        
+        return content
 
-def sendmail(mailconf, to_addrs, message):
+
+def sendmail(mailconf, message):
     """Takes a regular dictionary as mailconf, as follows.
 
     Example::
@@ -148,7 +157,7 @@ def sendmail(mailconf, to_addrs, message):
             tls=True,               # optional, default False
         )
 
-        d = mail.sendmail(mailconf, to_addrs, msg)
+        d = mail.sendmail(mailconf, msg)
         d.addCallback(on_response)
     """
     if not isinstance(mailconf, types.DictType):
@@ -179,7 +188,7 @@ def sendmail(mailconf, to_addrs, message):
     p = mailconf.get("password")
     factory = ESMTPSenderFactory(u, p,
                                  message.from_addr,
-                                 to_addrs,
+                                 message.to_addrs,
                                  message.render(),
                                  result,
                                  contextFactory=contextFactory,
